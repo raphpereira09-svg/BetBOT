@@ -1,8 +1,20 @@
-name: Daily picks
+name: Daily picks (v3)
+
+on:
+  # 10:00 Europe/Paris ≈ 08:00 UTC (en été). Ajuste si besoin.
+  schedule:
+    - cron: "0 8 * * *"
+  # Lancer à la main depuis l'onglet Actions
+  workflow_dispatch: {}
+
 jobs:
-  run:
+  send:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Cache le dossier data/ pour conserver l'historique des médianes
       - name: Cache data (odds history)
         uses: actions/cache@v4
         with:
@@ -10,5 +22,57 @@ jobs:
           key: data-cache-${{ github.run_id }}
           restore-keys: |
             data-cache-
-      - name: Checkout
-        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run daily sender (v3)
+        env:
+          # --- Secrets (à créer dans Settings > Secrets and variables > Actions) ---
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          ODDS_API_KEY:       ${{ secrets.ODDS_API_KEY }}
+
+          # --- Réglages généraux ---
+          TIMEZONE: Europe/Paris
+          MIN_ODDS: "1.30"
+          MIN_EDGE: "0.025"        # passe à 0.03 si tu veux plus strict
+          MAX_BETS: "3"
+          BANKROLL_START: "100"
+          KELLY_FRACTION: "0.25"   # ex: 0.15 pour être plus conservateur
+
+          # --- The Odds API (optionnel) ---
+          ODDS_REGIONS: eu
+          ODDS_MARKETS: h2h
+          ODDS_FORMAT: decimal
+          ODDS_DATE_FORMAT: iso
+
+          # --- Garde-fous marché ---
+          MIN_BOOKS: "3"           # nb mini de bookmakers cotant l’issue
+          MIN_START_MINUTES: "60"  # pas de match démarrant dans < 60 min
+          MAX_START_HOURS: "36"    # pas de match à > 36 h
+
+          # --- v3: Blending & Drift ---
+          ALPHA_MIN: "0.20"
+          ALPHA_MAX: "0.70"
+          ALPHA_K:   "0.80"
+          MIN_DELTA_EDGE: "0.005"  # l'ajustement doit apporter ≥0.5% d'edge
+          EPS_24H: "0.01"          # on veut une cote ≥ médiane 24h de +1%
+
+          # --- Caps par sport (évite les upsets aberrants) ---
+          TENNIS_MAX_ODDS: "2.20"
+          TENNIS_MIN_PROB: "0.50"
+          FOOT_MAX_ODDS:   "2.40"
+          FOOT_MIN_PROB:   "0.45"
+          BASKET_MAX_ODDS: "2.20"
+          BASKET_MIN_PROB: "0.52"
+        run: |
+          python cron_send.py
+
