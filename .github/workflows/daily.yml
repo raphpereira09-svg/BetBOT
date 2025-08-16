@@ -43,7 +43,7 @@ jobs:
           # --- Réglages généraux ---
           TIMEZONE: Europe/Paris
           MIN_ODDS: "1.30"
-          MIN_EDGE: "0.025"        # passe à 0.03 si tu veux plus strict
+          MIN_EDGE: "0.020"        # passe à 0.03 si tu veux plus strict
           MAX_BETS: "3"
           BANKROLL_START: "100"
           KELLY_FRACTION: "0.25"   # ex: 0.15 pour être plus conservateur
@@ -55,15 +55,15 @@ jobs:
           ODDS_DATE_FORMAT: iso
 
           # --- Garde-fous marché ---
-          MIN_BOOKS: "3"           # nb mini de bookmakers cotant l’issue
-          MIN_START_MINUTES: "60"  # pas de match démarrant dans < 60 min
-          MAX_START_HOURS: "36"    # pas de match à > 36 h
+          MIN_BOOKS: "2"           # nb mini de bookmakers cotant l’issue
+          MIN_START_MINUTES: "90"  # pas de match démarrant dans < 60 min
+          MAX_START_HOURS: "24"    # pas de match à > 36 h
 
           # --- v3: Blending & Drift ---
           ALPHA_MIN: "0.20"
           ALPHA_MAX: "0.70"
           ALPHA_K:   "0.80"
-          MIN_DELTA_EDGE: "0.005"  # l'ajustement doit apporter ≥0.5% d'edge
+          MIN_DELTA_EDGE: "0.003"  # l'ajustement doit apporter ≥0.5% d'edge
           EPS_24H: "0.01"          # on veut une cote ≥ médiane 24h de +1%
 
           # --- Caps par sport (évite les upsets aberrants) ---
