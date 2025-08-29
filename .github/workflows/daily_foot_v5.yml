@@ -1,0 +1,37 @@
+name: Daily FOOT picks (v5-foot)
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # ~10:00 Paris l'été
+  workflow_dispatch: {}
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run FOOT sender (v5-foot)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          ODDS_API_KEY:       ${{ secrets.ODDS_API_KEY }}
+          TIMEZONE: Europe/Paris
+          ODDS_REGIONS: eu,uk,us,au
+          ODDS_FORMAT: decimal
+          ODDS_DATE_FORMAT: iso
+          MIN_EV: "0.02"
+          MAX_PICKS: "3"
+        run: |
+          python cron_send_foot.py
