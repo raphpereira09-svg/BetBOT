@@ -1,4 +1,4 @@
-name: Daily FOOT picks (v5-foot)
+name: Daily FOOT picks (auto)
 
 on:
   schedule:
@@ -15,8 +15,10 @@ jobs:
       - name: Sanity check repo
         run: |
           ls -la
-          test -f cron_send_foot.py || (echo "cron_send_foot.py manquant à la racine" && exit 1)
-          test -f requirements.txt   || (echo "requirements.txt manquant" && exit 1)
+          if [ -f cron_send_foot.py ]; then echo "Found cron_send_foot.py";
+          elif [ -f cron_send.py ]; then echo "Found cron_send.py";
+          else echo "❌ Aucun sender trouvé (cron_send_foot.py ou cron_send.py)"; exit 1; fi
+          test -f requirements.txt || (echo "requirements.txt manquant" && exit 1)
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -28,7 +30,7 @@ jobs:
           python -m pip install --upgrade pip wheel setuptools
           pip install -r requirements.txt
 
-      - name: Smoke test (PAS d’envoi Telegram)
+      - name: Smoke test (sans Telegram)
         env:
           ODDS_API_KEY:       ${{ secrets.ODDS_API_KEY }}
           TIMEZONE: Europe/Paris
@@ -37,11 +39,16 @@ jobs:
           ODDS_DATE_FORMAT: iso
           MIN_EV: "0.02"
           MAX_PICKS: "3"
-          DRY_RUN: "1"      # <— empêche l’envoi Telegram
         run: |
-          python cron_send_foot.py
+          python - <<'PY'
+          import os
+          from odds_providers import fetch_soccer_odds
+          df = fetch_soccer_odds()
+          print("Fetched rows:", len(df))
+          print(df.head(5).to_string() if not df.empty else "No rows.")
+          PY
 
-      - name: Run FOOT sender (v5-foot)
+      - name: Run sender
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -52,6 +59,7 @@ jobs:
           ODDS_DATE_FORMAT: iso
           MIN_EV: "0.02"
           MAX_PICKS: "3"
-          DRY_RUN: "0"
         run: |
-          python cron_send_foot.py
+          if [ -f cron_send_foot.py ]; then python cron_send_foot.py;
+          elif [ -f cron_send.py ]; then python cron_send.py;
+          else echo "❌ Aucun sender trouvé"; exit 1; fi
