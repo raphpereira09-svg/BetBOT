@@ -26,6 +26,32 @@ jobs:
         run: |
           python -m pip install --upgrade pip wheel setuptools
           pip install -r requirements.txt
+      - name: Debug fetch (compte les événements par ligue)
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_REGIONS: eu,uk
+        run: |
+          python - <<'PY'
+          import os, requests
+          key=os.environ['ODDS_API_KEY']
+          regions=os.getenv('ODDS_REGIONS','eu')
+          sports=[
+            'soccer_france_ligue_1',
+            'soccer_epl',
+            'soccer_spain_la_liga',
+            'soccer_italy_serie_a',
+            'soccer_germany_bundesliga'
+          ]
+          for s in sports:
+            url=f'https://api.the-odds-api.com/v4/sports/{s}/odds'
+            params={'apiKey':key,'regions':regions,'markets':'h2h,totals','oddsFormat':'decimal','dateFormat':'iso'}
+            try:
+              r=requests.get(url, params=params, timeout=25)
+              print(s, '->', r.status_code, 'events:', (len(r.json()) if r.ok else 'ERR'))
+            except Exception as e:
+              print(s, '-> EXC', e)
+          PY
+
       - name: Run weekend report
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
