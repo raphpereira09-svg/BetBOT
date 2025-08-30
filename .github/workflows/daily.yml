@@ -59,6 +59,13 @@ jobs:
             except Exception as e:
               print(s, '-> EXC', e)
           PY
+      - name: Debug The Odds API
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          ODDS_REGIONS: eu,uk
+          ODDS_SPORTS: soccer_france_ligue_1,soccer_epl,soccer_spain_la_liga,soccer_italy_serie_a,soccer_germany_bundesliga
+        run: |
+          python debug_odds.py
 
       - name: Run weekend report
         env:
