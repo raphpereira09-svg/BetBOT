@@ -17,6 +17,14 @@ on:
 jobs:
   weekend:
     runs-on: ubuntu-latest
+    env:
+      TIMEZONE: Europe/Paris
+      WEEKEND_MIN_EV: "0.01"
+      WEEKEND_STRICT: "1"          # 1 = impose le week-end courant/prochain
+      WEEKEND_ALLOW_FALLBACK: "1"  # 1 = active le fallback si rien n’apparaît
+      ODDS_SPORTS: soccer_epl,soccer_france_ligue_1,soccer_spain_la_liga,soccer_italy_serie_a,soccer_germany_bundesliga
+      ODDS_REGIONS: eu,uk
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
